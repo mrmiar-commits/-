@@ -1,0 +1,14 @@
+{
+  "name": "zarnegar-nodejs-fullstack",
+  "version": "1.0.0",
+  "description": "زرنگار — بک‌اند Node.js و فرانت‌پیج مینیمال حسابداری طلا و ارز (بدون نیاز به وابستگی خارجی)",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test server.test.js"
+  },
+  "license": "PRIVATE"
+}

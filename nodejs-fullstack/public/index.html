@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>زرنگار — حسابداری مینیمال طلا و ارز</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Minimal Sidebar / Top Header -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-label="لوگوی زرنگار">
+          <svg viewBox="0 0 64 64" width="32" height="32" fill="none">
+            <rect width="64" height="64" rx="14" fill="#111318" />
+            <polygon points="32,12 49,22 49,42 32,52 15,42 15,22" stroke="#E6B84C" stroke-width="3" fill="none" />
+            <polygon points="32,20 42,26 42,38 32,44 22,38 22,26" stroke="#F5D378" stroke-width="2" fill="rgba(230,184,76,0.12)" />
+          </svg>
+        </div>
+        <div>
+          <h1 id="shop-name-title">طلافروشی زرنگار</h1>
+          <p class="muted-xs">حسابداری مینیمال طلا و ارز</p>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="منوی اصلی">
+        <button class="nav-btn active" data-section="dashboard">خانه و تابلو</button>
+        <button class="nav-btn" data-section="finance">حساب، کارت و خرج</button>
+        <button class="nav-btn" data-section="ledgers">انبار و فروشندگان</button>
+        <button class="nav-btn" data-section="voice">پیامگیر صوتی</button>
+        <button class="nav-btn" data-section="reports">گزارش و گوگل شیت</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="theme-toggle-btn" class="btn-outline full-w">تغییر تم روشن / تاریک</button>
+        <button id="refresh-all-btn" class="btn-ghost full-w">بروزرسانی نرخ آنلاین</button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <div id="toast-bar" class="toast hidden" role="status"></div>
+
+      <!-- SECTION 1: DASHBOARD -->
+      <section id="sec-dashboard" class="section active">
+        <div class="section-header">
+          <div>
+            <h2>نمای کلی و تابلو نرخ</h2>
+            <p class="muted-sm" id="market-status-line">در حال دریافت نرخ زنده...</p>
+          </div>
+          <div class="header-actions">
+            <button id="open-pricing-btn" class="btn-outline">استعلام آنلاین / ورود دستی نرخ</button>
+            <button id="quick-voice-btn" class="btn-primary">پیامگیر صوتی</button>
+          </div>
+        </div>
+
+        <!-- Price Board (No Chart — Clean Minimal Board) -->
+        <div class="grid-4" id="price-board">
+          <div class="price-tile">
+            <span class="muted-xs">گرم طلای ۱۸ عیار</span>
+            <strong class="mono gold" id="rate-18k">۰</strong>
+            <span class="muted-xs">تومان</span>
+          </div>
+          <div class="price-tile">
+            <span class="muted-xs">مثقال طلای آبشده</span>
+            <strong class="mono amber" id="rate-mesghal">۰</strong>
+            <span class="muted-xs">تومان</span>
+          </div>
+          <div class="price-tile">
+            <span class="muted-xs">گرم شمش ۲۴ عیار</span>
+            <strong class="mono" id="rate-24k">۰</strong>
+            <span class="muted-xs">تومان</span>
+          </div>
+          <div class="price-tile">
+            <span class="muted-xs">دلار آزاد</span>
+            <strong class="mono info" id="rate-usd">۰</strong>
+            <span class="muted-xs">تومان</span>
+          </div>
+        </div>
+
+        <!-- Voice Quick Banner -->
+        <div class="card accent-card row-between" id="dashboard-voice-banner">
+          <div>
+            <strong>پیامگیر صوتی هوشمند (آنلاین و آفلاین)</strong>
+            <p class="muted-sm">مثال: «1.5 گرم آبشده به رضا» ← تحلیل کلیدواژه‌ها و ثبت خودکار با تاریخ و ساعت در گوگل شیت</p>
+          </div>
+          <div class="row-gap">
+            <span id="offline-queue-badge" class="pill amber-pill hidden">۰ در صف ارسال</span>
+            <button class="btn-primary" data-jump="voice">شروع پیام صوتی</button>
+          </div>
+        </div>
+
+        <!-- Gold Breakdown by Form + USD + KPI Grid -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="row-between">
+              <h3>موجودی طلا به تفکیک نوع و دلار</h3>
+              <span class="pill info-pill mono" id="dash-usd-pill">$0.00</span>
+            </div>
+            <div class="divider"></div>
+            <div class="kv-list" id="gold-breakdown-list"></div>
+          </div>
+
+          <div class="grid-2 compact-grid">
+            <div class="card stat-card">
+              <span class="muted-xs">فروش امروز</span>
+              <strong class="mono profit" id="kpi-today-sales">۰</strong>
+              <span class="muted-xs" id="kpi-today-profit">سود: ۰</span>
+            </div>
+            <div class="card stat-card">
+              <span class="muted-xs">سود خالص (پس از مخارج)</span>
+              <strong class="mono profit" id="kpi-net-profit">۰</strong>
+              <span class="muted-xs" id="kpi-expenses">مخارج: ۰</span>
+            </div>
+            <div class="card stat-card">
+              <span class="muted-xs">کل حساب‌ها و کارت‌ها</span>
+              <strong class="mono gold" id="kpi-accounts-toman">۰</strong>
+              <span class="muted-xs" id="kpi-accounts-gold">معادل طلا: ۰ گرم</span>
+            </div>
+            <div class="card stat-card">
+              <span class="muted-xs">کل موجودی طلا</span>
+              <strong class="mono info" id="kpi-inventory-grams">۰ گرم</strong>
+              <span class="muted-xs" id="kpi-investor-grams">سرمایه‌گذاران: ۰ گرم</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="row-between">
+            <h3>آخرین تراکنش‌ها</h3>
+            <button class="btn-outline btn-sm" data-jump="finance">مدیریت تراکنش‌ها</button>
+          </div>
+          <div class="divider"></div>
+          <div id="recent-tx-list" class="stack-sm"></div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: TRANSACTIONS, ACCOUNTS (WITH GOLD EQUIV), EXPENSES -->
+      <section id="sec-finance" class="section">
+        <div class="section-header">
+          <div>
+            <h2>تراکنش‌ها، حساب‌های بانکی و مخارج مغازه</h2>
+            <p class="muted-sm">ثبت معاملات روزانه، کارت شخصی و تنخواه با معادل گرمی طلا، و مدیریت مخارج مغازه</p>
+          </div>
+          <div class="segmented" data-tabs="finance">
+            <button class="seg-btn active" data-subtab="tx">تراکنش‌ها</button>
+            <button class="seg-btn" data-subtab="accounts">حساب و کارت‌ها</button>
+            <button class="seg-btn" data-subtab="expenses">مخارج مغازه</button>
+          </div>
+        </div>
+
+        <!-- Subtab: Transactions -->
+        <div id="finance-tx" class="subtab active">
+          <div class="grid-2-uneven">
+            <form id="tx-form" class="card form-stack">
+              <h3>ثبت تراکنش جدید</h3>
+              <label>نوع عملیات
+                <select name="txType">
+                  <option value="SALE">فروش روزانه</option>
+                  <option value="PURCHASE">خرید از مشتری / همکار</option>
+                  <option value="TRANSFER_FROM_SHOP">انتقال از حساب مغازه</option>
+                  <option value="TRANSFER_TO_SHOP">انتقال به حساب مغازه</option>
+                </select>
+              </label>
+              <label>دسته طلا / ارز
+                <select name="goldCategory">
+                  <option value="NEW_GOLD">طلای نو ویترینی</option>
+                  <option value="USED_NO_WAGE">طلای کارکرده بدون اجرت</option>
+                  <option value="MELTED_GOLD">طلای آبشده</option>
+                  <option value="BULLION">شمش طلا (۲۴ عیار)</option>
+                  <option value="USD_CURRENCY">دلار و ارز</option>
+                  <option value="OTHER_GOLD">سایر انواع طلا</option>
+                </select>
+              </label>
+              <div class="row-2">
+                <label>وزن (گرم) / مقدار دلار<input type="number" step="0.001" name="weightGrams" value="1.5" required /></label>
+                <label>عیار<input type="number" name="karat" value="750" /></label>
+              </div>
+              <label>نرخ هر واحد (تومان)<input type="number" name="unitPriceToman" id="tx-unit-price" required /></label>
+              <div class="row-3">
+                <label>اجرت٪<input type="number" step="0.1" name="wagePercent" value="7" /></label>
+                <label>سود٪<input type="number" step="0.1" name="profitMarginPercent" value="7" /></label>
+                <label>مالیات٪<input type="number" step="0.1" name="taxPercent" value="9" /></label>
+              </div>
+              <div class="row-2">
+                <label>حساب مغازه<select name="accountId" id="tx-account-select"></select></label>
+                <label>فروشنده (اختیاری)<select name="sellerId" id="tx-seller-select"></select></label>
+              </div>
+              <label>نام مشتری (اختیاری)<input type="text" name="customerName" placeholder="مشتری حضوری" /></label>
+              <label>توضیحات<input type="text" name="notes" placeholder="اختیاری" /></label>
+              <button type="submit" class="btn-primary full-w">ثبت تراکنش و صدور فاکتور</button>
+            </form>
+
+            <div class="card">
+              <h3>فهرست تراکنش‌ها</h3>
+              <div class="divider"></div>
+              <div id="all-tx-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab: Accounts & Personal Cards / Petty Cash -->
+        <div id="finance-accounts" class="subtab">
+          <div class="card accent-card row-between">
+            <div>
+              <span class="muted-xs">مجموع موجودی تمام حساب‌ها، کارت شخصی و تنخواه</span>
+              <h3 class="mono" id="accounts-sum-toman">۰ تومان</h3>
+            </div>
+            <div class="text-left">
+              <span class="muted-xs">معادل گرمی طلای ۱۸ عیار</span>
+              <h3 class="mono gold" id="accounts-sum-gold">۰ گرم</h3>
+            </div>
+          </div>
+
+          <div class="grid-2-uneven">
+            <form id="account-form" class="card form-stack">
+              <h3>افزودن حساب / کارت بانکی / تنخواه</h3>
+              <label>عنوان حساب یا کارت<input type="text" name="name" placeholder="مثلاً کارت ملت شخصی یا تنخواه" required /></label>
+              <label>نوع حساب
+                <select name="accountType">
+                  <option value="PERSONAL_CARD">کارت بانکی شخصی</option>
+                  <option value="PETTY_CASH">تنخواه مغازه</option>
+                  <option value="BANK_POS">حساب بانکی / کارتخوان</option>
+                  <option value="CASH_REGISTER">صندوق نقدی مغازه</option>
+                  <option value="GOLD_SAFE">گاوصندوق طلا</option>
+                  <option value="CUSTOM">سایر حساب / کارت</option>
+                </select>
+              </label>
+              <label>شماره کارت / حساب (اختیاری)<input type="text" name="accountNumber" placeholder="6037-..." /></label>
+              <label>موجودی نقدی (تومان)<input type="number" name="balanceToman" value="0" /></label>
+              <div class="row-2">
+                <label>موجودی دلار ($)<input type="number" step="0.01" name="balanceUsd" value="0" /></label>
+                <label>طلای مستقیم (گرم)<input type="number" step="0.001" name="goldGrams18k" value="0" /></label>
+              </div>
+              <button type="submit" class="btn-primary full-w">ثبت حساب با محاسبه معادل طلا</button>
+            </form>
+
+            <div class="card">
+              <h3>حساب‌ها و کارت‌های ثبت‌شده</h3>
+              <div class="divider"></div>
+              <div id="accounts-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab: Shop Expenses -->
+        <div id="finance-expenses" class="subtab">
+          <div class="card loss-card row-between">
+            <div>
+              <span class="muted-xs">مجموع مخارج مغازه</span>
+              <h3 class="mono loss" id="expenses-sum-toman">۰ تومان</h3>
+            </div>
+            <div class="text-left">
+              <span class="muted-xs">معادل گرمی طلای ۱۸ عیار</span>
+              <h3 class="mono" id="expenses-sum-gold">۰ گرم</h3>
+            </div>
+          </div>
+
+          <div class="grid-2-uneven">
+            <form id="expense-form" class="card form-stack">
+              <h3>ثبت هزینه جدید مغازه</h3>
+              <label>شرح هزینه<input type="text" name="title" placeholder="مثلاً قبض برق، اجاره یا پیک" required /></label>
+              <label>دسته‌بندی
+                <select name="category">
+                  <option value="RENT">اجاره مغازه</option>
+                  <option value="UTILITIES">قبوض برق، آب و تلفن</option>
+                  <option value="SALARY">حقوق و پورسانت</option>
+                  <option value="SUPPLIES">ملزومات و پذیرایی</option>
+                  <option value="SECURITY_REPAIR">تعمیرات و امنیت</option>
+                  <option value="TRANSPORT">حمل و نقل و پیک</option>
+                  <option value="TAX_UNION">مالیات و اتحادیه</option>
+                  <option value="OTHER">سایر مخارج</option>
+                </select>
+              </label>
+              <label>مبلغ (تومان)<input type="number" name="amountToman" required /></label>
+              <label>برداشت از حساب / تنخواه<select name="accountId" id="expense-account-select"></select></label>
+              <label>ثبت‌کننده (اختیاری)<select name="sellerName" id="expense-seller-select"></select></label>
+              <label>توضیحات<input type="text" name="notes" placeholder="اختیاری" /></label>
+              <button type="submit" class="btn-primary full-w">ثبت هزینه مغازه</button>
+            </form>
+
+            <div class="card">
+              <h3>لیست مخارج مغازه</h3>
+              <div class="divider"></div>
+              <div id="expenses-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: INVENTORY, 3-5 SELLERS, CUSTOMERS, INVESTORS -->
+      <section id="sec-ledgers" class="section">
+        <div class="section-header">
+          <div>
+            <h2>انبار طلا، فروشندگان مغازه و دفاتر</h2>
+            <p class="muted-sm">مدیریت انبار به تفکیک شکل طلا، ۳ تا ۵ فروشنده مغازه (ورود و خروج طلا و دلار)، مشتریان و سرمایه‌گذاران</p>
+          </div>
+          <div class="segmented" data-tabs="ledgers">
+            <button class="seg-btn active" data-subtab="inventory">انبار طلا</button>
+            <button class="seg-btn" data-subtab="sellers">فروشندگان (۳ تا ۵)</button>
+            <button class="seg-btn" data-subtab="customers">مشتریان</button>
+            <button class="seg-btn" data-subtab="investors">سرمایه‌گذاران</button>
+          </div>
+        </div>
+
+        <!-- Subtab: Inventory -->
+        <div id="ledgers-inventory" class="subtab active">
+          <div class="grid-2-uneven">
+            <form id="inventory-form" class="card form-stack">
+              <h3>افزودن موجودی انبار طلا / ارز</h3>
+              <label>نوع طلا / ارز
+                <select name="category">
+                  <option value="MELTED_GOLD">طلای آبشده</option>
+                  <option value="BULLION">شمش طلا (۲۴ عیار)</option>
+                  <option value="NEW_GOLD">طلای نو ویترینی</option>
+                  <option value="USED_NO_WAGE">طلای کارکرده بدون اجرت</option>
+                  <option value="OTHER_GOLD">سایر انواع طلا</option>
+                  <option value="USD_CURRENCY">دلار و ارز</option>
+                </select>
+              </label>
+              <label>نوع قطعه
+                <select name="pieceType">
+                  <option value="MELTED_BLOCK">قطعه آبشده</option>
+                  <option value="BULLION_BAR">شمش</option>
+                  <option value="RING">انگشتر</option>
+                  <option value="NECKLACE">گردنبند</option>
+                  <option value="BANGLE">النگو</option>
+                  <option value="BRACELET">دستبند</option>
+                  <option value="EARRING">گوشواره</option>
+                  <option value="SET">سرویس و نیم‌ست</option>
+                  <option value="COIN">سکه</option>
+                  <option value="CURRENCY_UNIT">واحد ارز</option>
+                  <option value="OTHER">سایر قطعات</option>
+                </select>
+              </label>
+              <label>عنوان کالا<input type="text" name="title" placeholder="مثلاً آبشده انگ ۴۴۲۰ یا انگشتر نو" required /></label>
+              <div class="row-2">
+                <label>وزن (گرم)<input type="number" step="0.001" name="weightGrams" value="0" /></label>
+                <label>عیار<input type="number" name="karat" value="750" /></label>
+              </div>
+              <div class="row-2">
+                <label>تعداد / مقدار دلار<input type="number" name="quantity" value="1" /></label>
+                <label>میانگین خرید (تومان)<input type="number" name="avgBuyPricePerUnit" value="0" /></label>
+              </div>
+              <label>کد ری‌گیری / انگ (اختیاری)<input type="text" name="labCode" /></label>
+              <button type="submit" class="btn-primary full-w">ثبت در انبار</button>
+            </form>
+
+            <div class="card">
+              <h3>موجودی فعلی انبار</h3>
+              <div class="divider"></div>
+              <div id="inventory-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab: 3-5 Shop Sellers -->
+        <div id="ledgers-sellers" class="subtab">
+          <div class="card accent-card row-between">
+            <div>
+              <strong>مدیریت فروشندگان مغازه (۳ تا ۵ کاربر)</strong>
+              <p class="muted-sm">ثبت دقیق ورود و خروج طلا و دلار توسط هر فروشنده و محاسبه تراز هر فرد</p>
+            </div>
+            <span class="pill gold-pill" id="sellers-count-pill">۰ از ۵ فروشنده</span>
+          </div>
+
+          <div class="grid-2-uneven">
+            <div class="stack-md">
+              <form id="seller-form" class="card form-stack">
+                <h3>تعریف فروشنده جدید</h3>
+                <label>نام و نام خانوادگی<input type="text" name="name" placeholder="مثلاً رضا محمدی" required /></label>
+                <label>سمت<input type="text" name="roleTitle" value="فروشنده مغازه" /></label>
+                <label>شماره تماس<input type="text" name="phone" placeholder="0912..." /></label>
+                <button type="submit" class="btn-primary full-w">افزودن فروشنده</button>
+              </form>
+
+              <form id="seller-movement-form" class="card form-stack">
+                <h3>ثبت ورود / خروج طلا و دلار توسط فروشنده</h3>
+                <label>انتخاب فروشنده<select name="sellerId" id="movement-seller-select" required></select></label>
+                <label>جهت حرکت
+                  <select name="direction">
+                    <option value="IN">ورود به مغازه</option>
+                    <option value="OUT">خروج از مغازه</option>
+                  </select>
+                </label>
+                <label>نوع طلا / ارز
+                  <select name="goldCategory">
+                    <option value="MELTED_GOLD">طلای آبشده</option>
+                    <option value="BULLION">شمش ۲۴ عیار</option>
+                    <option value="NEW_GOLD">طلای نو ویترینی</option>
+                    <option value="USED_NO_WAGE">طلای کارکرده بدون اجرت</option>
+                    <option value="USD_CURRENCY">دلار و ارز</option>
+                  </select>
+                </label>
+                <div class="row-2">
+                  <label>وزن طلا (گرم)<input type="number" step="0.001" name="weightGrams" value="0" /></label>
+                  <label>دلار ($)<input type="number" step="0.01" name="usdAmount" value="0" /></label>
+                </div>
+                <label>شرح جزئیات<input type="text" name="description" placeholder="مثلاً تحویل آبشده به کارگاه" /></label>
+                <button type="submit" class="btn-outline full-w">ثبت ورود / خروج</button>
+              </form>
+            </div>
+
+            <div class="stack-md">
+              <div class="card">
+                <h3>فروشندگان تعریف‌شده</h3>
+                <div class="divider"></div>
+                <div id="sellers-list" class="stack-sm"></div>
+              </div>
+              <div class="card">
+                <h3>تاریخچه ورود و خروج فروشندگان</h3>
+                <div class="divider"></div>
+                <div id="seller-movements-list" class="stack-sm"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab: Customers -->
+        <div id="ledgers-customers" class="subtab">
+          <div class="grid-2-uneven">
+            <form id="customer-form" class="card form-stack">
+              <h3>ایجاد پرونده مشتری جدید</h3>
+              <label>نام و نام خانوادگی<input type="text" name="fullName" required /></label>
+              <label>تلفن همراه<input type="text" name="phone" /></label>
+              <label>کد ملی (اختیاری)<input type="text" name="nationalId" /></label>
+              <label>یادداشت پرونده<input type="text" name="notes" /></label>
+              <button type="submit" class="btn-primary full-w">ایجاد پرونده مشتری</button>
+            </form>
+            <div class="card">
+              <h3>پرونده مشتریان</h3>
+              <div class="divider"></div>
+              <div id="customers-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab: Investors -->
+        <div id="ledgers-investors" class="subtab">
+          <div class="grid-2-uneven">
+            <form id="investor-form" class="card form-stack">
+              <h3>تعریف سرمایه‌گذار جدید</h3>
+              <label>نام سرمایه‌گذار<input type="text" name="fullName" required /></label>
+              <label>تلفن<input type="text" name="phone" /></label>
+              <label>نوع طلای سرمایه‌گذاری
+                <select name="goldCategory">
+                  <option value="MELTED_GOLD">طلای آبشده</option>
+                  <option value="USED_NO_WAGE">طلای کارکرده بدون اجرت</option>
+                  <option value="NEW_GOLD">طلای نو ویترینی</option>
+                  <option value="BULLION">شمش ۲۴ عیار</option>
+                </select>
+              </label>
+              <div class="row-2">
+                <label>سرمایه طلایی (گرم)<input type="number" step="0.001" name="investedGrams" value="0" /></label>
+                <label>سهم سود٪<input type="number" step="0.1" name="profitSharePercent" value="50" /></label>
+              </div>
+              <label>سرمایه نقدی (تومان)<input type="number" name="investedCashToman" value="0" /></label>
+              <button type="submit" class="btn-primary full-w">ثبت سرمایه‌گذار</button>
+            </form>
+            <div class="card">
+              <h3>لیست سرمایه‌گذاران</h3>
+              <div class="divider"></div>
+              <div id="investors-list" class="stack-sm"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: VOICE MESSAGE RECORDER + KEYWORD ANALYZER -->
+      <section id="sec-voice" class="section">
+        <div class="section-header">
+          <div>
+            <h2>پیامگیر صوتی هوشمند (آنلاین و آفلاین)</h2>
+            <p class="muted-sm">ضبط صوتی فارسی، تحلیل خودکار کلیدواژه‌ها و ثبت با تاریخ و ساعت در گوگل شیت</p>
+          </div>
+          <span id="network-status-pill" class="pill profit-pill">آنلاین</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="card form-stack">
+            <div class="voice-mic-wrap">
+              <button id="mic-record-btn" class="mic-circle" type="button" aria-label="شروع ضبط صوتی">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                  <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V19H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.1A5 5 0 0 0 17 11z"/>
+                </svg>
+              </button>
+              <p id="mic-status-text" class="muted-sm">روی میکروفون بزنید یا متن پیام را بنویسید</p>
+            </div>
+
+            <label>متن پیام صوتی (قابل ویرایش)
+              <textarea id="voice-transcript" rows="3" placeholder="مثال: 1.5 گرم آبشده به رضا"></textarea>
+            </label>
+
+            <div class="chip-row">
+              <button type="button" class="chip" data-sample="1.5 گرم آبشده به رضا">1.5 گرم آبشده به رضا</button>
+              <button type="button" class="chip" data-sample="۳ گرم طلای نو انگشتر به خانم احمدی">۳ گرم طلای نو انگشتر به خانم احمدی</button>
+              <button type="button" class="chip" data-sample="۵۰۰ دلار از کریم">۵۰۰ دلار از کریم</button>
+              <button type="button" class="chip" data-sample="۸۰۰ هزار تومان خرج پیک مغازه">۸۰۰ هزار تومان خرج پیک مغازه</button>
+            </div>
+
+            <div class="row-2">
+              <label>فروشنده ثبت‌کننده<select id="voice-seller-select"></select></label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="voice-post-accounting" />
+                <span>ثبت همزمان در حسابداری مغازه</span>
+              </label>
+            </div>
+
+            <button id="save-voice-btn" type="button" class="btn-primary full-w">ذخیره و ارسال خودکار به گوگل شیت</button>
+          </div>
+
+          <div class="card">
+            <h3>تحلیل زنده کلیدواژه‌ها</h3>
+            <div class="divider"></div>
+            <div id="voice-parsed-preview" class="kv-list">
+              <p class="muted-sm">با وارد کردن یا گفتن پیام، وزن، نوع طلا، طرف حساب و تاریخ به‌صورت آنی استخراج می‌شود.</p>
+            </div>
+            <div class="divider"></div>
+            <div class="row-between">
+              <span class="muted-xs" id="voice-pending-info">همه پیام‌ها همگام هستند</span>
+              <button id="flush-voice-btn" type="button" class="btn-outline btn-sm">ارسال پیام‌های در صف به شیت</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>تاریخچه پیام‌های صوتی</h3>
+          <div class="divider"></div>
+          <div id="voice-history-list" class="stack-sm"></div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: REPORTS & GOOGLE SHEETS (SOLVES ACCESS BLOCKED) -->
+      <section id="sec-reports" class="section">
+        <div class="section-header">
+          <div>
+            <h2>گزارش‌گیری مالی و اتصال گوگل شیت</h2>
+            <p class="muted-sm">گزارش سود و زیان پس از مخارج، چاپ، CSV و اتصال مستقیم گوگل شیت بدون ارور Access Blocked</p>
+          </div>
+          <div class="segmented" data-tabs="reports">
+            <button class="seg-btn active" data-subtab="financial">گزارش‌گیری</button>
+            <button class="seg-btn" data-subtab="sheets">گوگل شیت و تنظیمات</button>
+          </div>
+        </div>
+
+        <!-- Subtab: Financial Reports -->
+        <div id="reports-financial" class="subtab active">
+          <div class="row-between">
+            <div class="chip-row" id="report-period-chips">
+              <button class="chip active" data-period="TODAY">امروز</button>
+              <button class="chip" data-period="WEEK">۷ روز اخیر</button>
+              <button class="chip" data-period="MONTH">۳۰ روز اخیر</button>
+              <button class="chip" data-period="ALL">کل دوره</button>
+            </div>
+            <div class="row-gap">
+              <button id="print-report-btn" class="btn-outline btn-sm">چاپ گزارش</button>
+              <a href="/api/export/csv" class="btn-primary btn-sm" download>دانلود فایل CSV</a>
+            </div>
+          </div>
+
+          <div class="grid-2" id="report-cards-container"></div>
+        </div>
+
+        <!-- Subtab: Google Sheets & Settings -->
+        <div id="reports-sheets" class="subtab">
+          <div class="grid-2">
+            <div class="card form-stack">
+              <h3>اتصال مستقیم گوگل شیت (رفع ارور Access Blocked)</h3>
+              <p class="muted-sm">
+                ۱. در گوگل شیت خود به مسیر <strong>Extensions → Apps Script</strong> بروید.<br />
+                ۲. کد آماده را کپی و جای‌گذاری کرده و روی <strong>Deploy → New deployment → Web app</strong> با دسترسی <strong>Anyone</strong> بزنید.<br />
+                ۳. لینک تولیدشده را پایین وارد کنید تا پیامگیر صوتی و کل جداول بدون خطا همگام شوند.
+              </p>
+              <button id="copy-script-btn" type="button" class="btn-outline full-w">کپی کد آماده Google Apps Script</button>
+              <label>لینک وب‌اپ Google Apps Script
+                <input type="url" id="sheets-webhook-input" placeholder="https://script.google.com/macros/s/.../exec" dir="ltr" />
+              </label>
+              <div class="row-2">
+                <button id="test-webhook-btn" type="button" class="btn-outline full-w">تست و ذخیره اتصال</button>
+                <button id="sync-sheets-btn" type="button" class="btn-primary full-w">همگام‌سازی کامل با شیت</button>
+              </div>
+            </div>
+
+            <form id="settings-form" class="card form-stack">
+              <h3>تنظیمات مغازه و درگاه پرداخت</h3>
+              <label>نام طلافروشی<input type="text" name="shopName" id="set-shop-name" /></label>
+              <label>نام مدیریت<input type="text" name="ownerName" id="set-owner-name" /></label>
+              <label>درگاه پرداخت
+                <select name="paymentProvider" id="set-payment-provider">
+                  <option value="ZARINPAL">زرین‌پال</option>
+                  <option value="IDPAY">آیدی‌پی</option>
+                  <option value="CUSTOM_LINK">لینک اختصاصی</option>
+                </select>
+              </label>
+              <label>کد پذیرنده (Merchant ID)<input type="text" name="merchantId" id="set-merchant-id" dir="ltr" /></label>
+              <button type="submit" class="btn-primary full-w">ذخیره تنظیمات مغازه</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Pricing Mode Modal (Online API vs Manual) -->
+  <div id="pricing-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="row-between">
+        <h3>منبع نرخ طلا و دلار (API آنلاین / دستی)</h3>
+        <button id="close-pricing-modal" class="btn-ghost btn-sm" type="button">✕</button>
+      </div>
+      <form id="pricing-form" class="form-stack">
+        <label class="checkbox-row">
+          <input type="checkbox" name="useManualPrice" id="use-manual-price" />
+          <span>فعال‌سازی ورود دستی نرخ طلا (جایگزین استعلام آنلاین API)</span>
+        </label>
+        <label>نرخ دلار آزاد (تومان)<input type="number" name="manualUsdToman" id="pm-usd" required /></label>
+        <label>گرم طلای ۱۸ عیار دستی (تومان)<input type="number" name="manualGold18kToman" id="pm-18k" /></label>
+        <label>مثقال طلای آبشده دستی (تومان)<input type="number" name="manualMeltedMesghalToman" id="pm-mesghal" /></label>
+        <label>گرم شمش ۲۴ عیار دستی (تومان)<input type="number" name="manualBullion24kToman" id="pm-24k" /></label>
+        <button type="submit" class="btn-primary full-w">اعمال روی تابلو</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
