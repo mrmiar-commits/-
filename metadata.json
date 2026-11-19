@@ -1,0 +1,6 @@
+{
+  "name": "زرنگار",
+  "description": "اپلیکیشن حسابداری جامع خرده فروشی طلا، مدیریت مشتریان، سرمایه گذاران، انبار، نرخ لحظه ای و همگام سازی با گوگل شیت",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

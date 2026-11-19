@@ -1,0 +1,300 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOptionalString(data, key, maxLen) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    // Entity Validators
+    function isValidUserSettings(data, userId) {
+      return data.userId == userId &&
+             data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 100 &&
+             data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 100 &&
+             data.totpEnabled is bool &&
+             data.biometricEnabled is bool &&
+             data.paymentProvider in ['ZARINPAL', 'IDPAY', 'CUSTOM_LINK'] &&
+             isOptionalString(data, 'spreadsheetId', 128) &&
+             isOptionalString(data, 'sheetsWebhookUrl', 512) &&
+             isOptionalString(data, 'merchantId', 128) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidShopAccount(data, userId) {
+      return data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.accountType in ['CASH_REGISTER', 'BANK_POS', 'PERSONAL_CARD', 'PETTY_CASH', 'GOLD_SAFE', 'CUSTOM'] &&
+             data.balanceToman is number &&
+             data.balanceUsd is number &&
+             data.goldGrams18k is number &&
+             isOptionalString(data, 'accountNumber', 64) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidInventoryItem(data, userId) {
+      return data.userId == userId &&
+             data.category in ['NEW_GOLD', 'USED_NO_WAGE', 'MELTED_GOLD', 'BULLION', 'USD_CURRENCY', 'OTHER_GOLD'] &&
+             (!('pieceType' in data) || data.pieceType in ['RING', 'NECKLACE', 'BANGLE', 'BRACELET', 'EARRING', 'SET', 'PENDANT', 'COIN', 'BULLION_BAR', 'MELTED_BLOCK', 'CURRENCY_UNIT', 'OTHER']) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.karat is int && data.karat >= 0 && data.karat <= 1000 &&
+             data.weightGrams is number && data.weightGrams >= 0 &&
+             data.quantity is int && data.quantity >= 0 &&
+             data.avgBuyPricePerUnit is number && data.avgBuyPricePerUnit >= 0 &&
+             data.defaultWagePercent is number && data.defaultWagePercent >= 0 && data.defaultWagePercent <= 100 &&
+             isOptionalString(data, 'labCode', 64) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidCustomer(data, userId) {
+      return data.userId == userId &&
+             data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30 &&
+             data.goldBalanceGrams is number &&
+             data.cashBalanceToman is number &&
+             data.totalPurchasedToman is number && data.totalPurchasedToman >= 0 &&
+             isOptionalString(data, 'nationalId', 24) &&
+             isOptionalString(data, 'notes', 500) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidInvestor(data, userId) {
+      return data.userId == userId &&
+             data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30 &&
+             data.goldCategory in ['MELTED_GOLD', 'USED_NO_WAGE', 'NEW_GOLD', 'BULLION'] &&
+             data.investedGrams is number && data.investedGrams >= 0 &&
+             data.investedCashToman is number && data.investedCashToman >= 0 &&
+             data.profitSharePercent is number && data.profitSharePercent >= 0 && data.profitSharePercent <= 100 &&
+             data.realizedProfitToman is number &&
+             data.contractStatus in ['ACTIVE', 'SETTLED'] &&
+             isOptionalString(data, 'notes', 500) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidGoldTransaction(data, userId) {
+      return data.userId == userId &&
+             data.txType in ['SALE', 'PURCHASE', 'TRANSFER_FROM_SHOP', 'TRANSFER_TO_SHOP', 'INVESTOR_DEPOSIT', 'INVESTOR_PAYOUT'] &&
+             data.goldCategory in ['NEW_GOLD', 'USED_NO_WAGE', 'MELTED_GOLD', 'BULLION', 'USD_CURRENCY', 'OTHER_GOLD', 'NONE'] &&
+             data.accountId is string && data.accountId.size() >= 1 && data.accountId.size() <= 128 &&
+             data.accountName is string && data.accountName.size() >= 1 && data.accountName.size() <= 100 &&
+             data.weightGrams is number && data.weightGrams >= 0 &&
+             data.karat is int && data.karat >= 0 && data.karat <= 1000 &&
+             data.unitPriceToman is number && data.unitPriceToman >= 0 &&
+             data.wagePercent is number && data.wagePercent >= 0 && data.wagePercent <= 100 &&
+             data.profitMarginPercent is number && data.profitMarginPercent >= 0 && data.profitMarginPercent <= 100 &&
+             data.taxPercent is number && data.taxPercent >= 0 && data.taxPercent <= 100 &&
+             data.costBasisToman is number && data.costBasisToman >= 0 &&
+             data.totalAmountToman is number && data.totalAmountToman >= 0 &&
+             data.calculatedProfitToman is number &&
+             data.paymentMethod in ['CASH', 'POS', 'GATEWAY', 'GOLD_EXCHANGE', 'ACCOUNT_TRANSFER'] &&
+             data.paymentStatus in ['PAID', 'PENDING_GATEWAY', 'CREDIT'] &&
+             data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 64 &&
+             data.sheetsSynced is bool &&
+             isOptionalString(data, 'inventoryItemId', 128) &&
+             isOptionalString(data, 'customerId', 128) &&
+             isOptionalString(data, 'customerName', 100) &&
+             isOptionalString(data, 'investorId', 128) &&
+             isOptionalString(data, 'sellerId', 128) &&
+             isOptionalString(data, 'sellerName', 100) &&
+             isOptionalString(data, 'targetAccountId', 128) &&
+             isOptionalString(data, 'gatewayRefId', 128) &&
+             isOptionalString(data, 'notes', 500) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidPriceAlert(data, userId) {
+      return data.userId == userId &&
+             data.assetSymbol in ['GOLD_18K', 'MELTED_MESGHAL', 'BULLION_24K', 'XAU_OUNCE', 'USD_RATE'] &&
+             data.assetLabel is string && data.assetLabel.size() >= 1 && data.assetLabel.size() <= 80 &&
+             data.condition in ['ABOVE', 'BELOW'] &&
+             data.targetPrice is number && data.targetPrice > 0 &&
+             data.enabled is bool &&
+             data.triggered is bool &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    // 1. User Settings Document
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'shopName', 'ownerName', 'totpEnabled', 'biometricEnabled', 'paymentProvider', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'shopName', 'ownerName', 'totpEnabled', 'biometricEnabled', 'spreadsheetId', 'sheetsWebhookUrl', 'paymentProvider', 'merchantId', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserSettings(incoming(), userId);
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidUserSettings(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['shopName', 'ownerName', 'totpEnabled', 'biometricEnabled', 'spreadsheetId', 'sheetsWebhookUrl', 'paymentProvider', 'merchantId', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // 2. Shop Accounts
+      match /accounts/{accountId} {
+        allow get: if isOwner(userId) && isValidId(accountId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(accountId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'accountType', 'balanceToman', 'balanceUsd', 'goldGrams18k', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'accountType', 'balanceToman', 'balanceUsd', 'goldGrams18k', 'accountNumber', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidShopAccount(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(accountId) &&
+                         isValidShopAccount(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'accountType', 'balanceToman', 'balanceUsd', 'goldGrams18k', 'accountNumber', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(accountId);
+      }
+
+      // 3. Inventory Items
+      match /inventory/{itemId} {
+        allow get: if isOwner(userId) && isValidId(itemId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(itemId) &&
+                         incoming().keys().hasAll(['userId', 'category', 'pieceType', 'title', 'karat', 'weightGrams', 'quantity', 'avgBuyPricePerUnit', 'defaultWagePercent', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'category', 'pieceType', 'title', 'karat', 'weightGrams', 'quantity', 'avgBuyPricePerUnit', 'defaultWagePercent', 'labCode', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidInventoryItem(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(itemId) &&
+                         isValidInventoryItem(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['category', 'pieceType', 'title', 'karat', 'weightGrams', 'quantity', 'avgBuyPricePerUnit', 'defaultWagePercent', 'labCode', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(itemId);
+      }
+
+      // 4. Customers
+      match /customers/{customerId} {
+        allow get: if isOwner(userId) && isValidId(customerId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(customerId) &&
+                         incoming().keys().hasAll(['userId', 'fullName', 'phone', 'goldBalanceGrams', 'cashBalanceToman', 'totalPurchasedToman', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'fullName', 'phone', 'nationalId', 'goldBalanceGrams', 'cashBalanceToman', 'totalPurchasedToman', 'notes', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidCustomer(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(customerId) &&
+                         isValidCustomer(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'nationalId', 'goldBalanceGrams', 'cashBalanceToman', 'totalPurchasedToman', 'notes', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(customerId);
+      }
+
+      // 5. Investors
+      match /investors/{investorId} {
+        allow get: if isOwner(userId) && isValidId(investorId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(investorId) &&
+                         incoming().keys().hasAll(['userId', 'fullName', 'phone', 'goldCategory', 'investedGrams', 'investedCashToman', 'profitSharePercent', 'realizedProfitToman', 'contractStatus', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'fullName', 'phone', 'goldCategory', 'investedGrams', 'investedCashToman', 'profitSharePercent', 'realizedProfitToman', 'contractStatus', 'notes', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidInvestor(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(investorId) &&
+                         isValidInvestor(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'goldCategory', 'investedGrams', 'investedCashToman', 'profitSharePercent', 'realizedProfitToman', 'contractStatus', 'notes', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(investorId);
+      }
+
+      // 6. Gold Transactions
+      match /transactions/{txId} {
+        allow get: if isOwner(userId) && isValidId(txId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(txId) &&
+                         incoming().keys().hasAll(['userId', 'txType', 'goldCategory', 'accountId', 'accountName', 'weightGrams', 'karat', 'unitPriceToman', 'wagePercent', 'profitMarginPercent', 'taxPercent', 'costBasisToman', 'totalAmountToman', 'calculatedProfitToman', 'paymentMethod', 'paymentStatus', 'invoiceNumber', 'sheetsSynced', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'txType', 'goldCategory', 'inventoryItemId', 'customerId', 'customerName', 'investorId', 'sellerId', 'sellerName', 'accountId', 'targetAccountId', 'accountName', 'weightGrams', 'karat', 'unitPriceToman', 'wagePercent', 'profitMarginPercent', 'taxPercent', 'costBasisToman', 'totalAmountToman', 'calculatedProfitToman', 'paymentMethod', 'paymentStatus', 'gatewayRefId', 'invoiceNumber', 'sheetsSynced', 'notes', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidGoldTransaction(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(txId) &&
+                         isValidGoldTransaction(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           (existing().paymentStatus == 'PENDING_GATEWAY' &&
+                            incoming().diff(existing()).affectedKeys().hasOnly(['paymentStatus', 'gatewayRefId', 'sheetsSynced', 'notes', 'updatedAt'])) ||
+                           (incoming().diff(existing()).affectedKeys().hasOnly(['sheetsSynced', 'notes', 'updatedAt']))
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(txId);
+      }
+
+      // 7. Price Alerts
+      match /price_alerts/{alertId} {
+        allow get: if isOwner(userId) && isValidId(alertId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidId(alertId) &&
+                         incoming().keys().hasAll(['userId', 'assetSymbol', 'assetLabel', 'condition', 'targetPrice', 'enabled', 'triggered', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'assetSymbol', 'assetLabel', 'condition', 'targetPrice', 'enabled', 'triggered', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt <= request.time &&
+                         isValidPriceAlert(incoming(), userId);
+
+        allow update: if isOwner(userId) && isValidId(alertId) &&
+                         isValidPriceAlert(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['assetSymbol', 'assetLabel', 'condition', 'targetPrice', 'enabled', 'triggered', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(alertId);
+      }
+    }
+  }
+}

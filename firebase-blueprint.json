@@ -1,0 +1,182 @@
+{
+  "entities": {
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Shop profile, 2FA security configuration, Google Sheets workbook ID, and payment gateway settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "shopName": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "totpEnabled": { "type": "boolean" },
+        "biometricEnabled": { "type": "boolean" },
+        "spreadsheetId": { "type": "string" },
+        "sheetsWebhookUrl": { "type": "string" },
+        "paymentProvider": { "type": "string", "enum": ["ZARINPAL", "IDPAY", "CUSTOM_LINK"] },
+        "merchantId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "shopName", "ownerName", "totpEnabled", "biometricEnabled", "paymentProvider", "createdAt", "updatedAt"]
+    },
+    "ShopAccount": {
+      "title": "ShopAccount",
+      "description": "Shop cash drawer, bank/POS account, gold safe, or custom user-defined financial account.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "accountType": { "type": "string", "enum": ["CASH_REGISTER", "BANK_POS", "PERSONAL_CARD", "PETTY_CASH", "GOLD_SAFE", "CUSTOM"] },
+        "balanceToman": { "type": "number" },
+        "balanceUsd": { "type": "number" },
+        "goldGrams18k": { "type": "number" },
+        "accountNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "accountType", "balanceToman", "balanceUsd", "goldGrams18k", "createdAt", "updatedAt"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Gold and currency inventory lot with piece type, karat, weight in grams, quantity, and cost basis.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string", "enum": ["NEW_GOLD", "USED_NO_WAGE", "MELTED_GOLD", "BULLION", "USD_CURRENCY", "OTHER_GOLD"] },
+        "pieceType": { "type": "string", "enum": ["RING", "NECKLACE", "BANGLE", "BRACELET", "EARRING", "SET", "PENDANT", "COIN", "BULLION_BAR", "MELTED_BLOCK", "CURRENCY_UNIT", "OTHER"] },
+        "title": { "type": "string" },
+        "karat": { "type": "integer" },
+        "weightGrams": { "type": "number" },
+        "quantity": { "type": "integer" },
+        "avgBuyPricePerUnit": { "type": "number" },
+        "defaultWagePercent": { "type": "number" },
+        "labCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "pieceType", "title", "karat", "weightGrams", "quantity", "avgBuyPricePerUnit", "defaultWagePercent", "createdAt", "updatedAt"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer profile and running gold/cash ledger summary.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "nationalId": { "type": "string" },
+        "goldBalanceGrams": { "type": "number" },
+        "cashBalanceToman": { "type": "number" },
+        "totalPurchasedToman": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "phone", "goldBalanceGrams", "cashBalanceToman", "totalPurchasedToman", "createdAt", "updatedAt"]
+    },
+    "Investor": {
+      "title": "Investor",
+      "description": "Gold investor participating in melted, zero-wage, new gold, or bullion inventory.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "goldCategory": { "type": "string", "enum": ["MELTED_GOLD", "USED_NO_WAGE", "NEW_GOLD", "BULLION"] },
+        "investedGrams": { "type": "number" },
+        "investedCashToman": { "type": "number" },
+        "profitSharePercent": { "type": "number" },
+        "realizedProfitToman": { "type": "number" },
+        "contractStatus": { "type": "string", "enum": ["ACTIVE", "SETTLED"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "phone", "goldCategory", "investedGrams", "investedCashToman", "profitSharePercent", "realizedProfitToman", "contractStatus", "createdAt", "updatedAt"]
+    },
+    "GoldTransaction": {
+      "title": "GoldTransaction",
+      "description": "Daily retail gold/currency sale, purchase, shop account transfer, or investor settlement.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "txType": { "type": "string", "enum": ["SALE", "PURCHASE", "TRANSFER_FROM_SHOP", "TRANSFER_TO_SHOP", "INVESTOR_DEPOSIT", "INVESTOR_PAYOUT"] },
+        "goldCategory": { "type": "string", "enum": ["NEW_GOLD", "USED_NO_WAGE", "MELTED_GOLD", "BULLION", "USD_CURRENCY", "OTHER_GOLD", "NONE"] },
+        "inventoryItemId": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "investorId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "accountId": { "type": "string" },
+        "targetAccountId": { "type": "string" },
+        "accountName": { "type": "string" },
+        "weightGrams": { "type": "number" },
+        "karat": { "type": "integer" },
+        "unitPriceToman": { "type": "number" },
+        "wagePercent": { "type": "number" },
+        "profitMarginPercent": { "type": "number" },
+        "taxPercent": { "type": "number" },
+        "costBasisToman": { "type": "number" },
+        "totalAmountToman": { "type": "number" },
+        "calculatedProfitToman": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["CASH", "POS", "GATEWAY", "GOLD_EXCHANGE", "ACCOUNT_TRANSFER"] },
+        "paymentStatus": { "type": "string", "enum": ["PAID", "PENDING_GATEWAY", "CREDIT"] },
+        "gatewayRefId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "sheetsSynced": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "txType", "goldCategory", "accountId", "accountName", "weightGrams", "karat", "unitPriceToman", "wagePercent", "profitMarginPercent", "taxPercent", "costBasisToman", "totalAmountToman", "calculatedProfitToman", "paymentMethod", "paymentStatus", "invoiceNumber", "sheetsSynced", "createdAt", "updatedAt"]
+    },
+    "PriceAlert": {
+      "title": "PriceAlert",
+      "description": "User-configured target threshold alert for gold or USD market prices.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "assetSymbol": { "type": "string", "enum": ["GOLD_18K", "MELTED_MESGHAL", "BULLION_24K", "XAU_OUNCE", "USD_RATE"] },
+        "assetLabel": { "type": "string" },
+        "condition": { "type": "string", "enum": ["ABOVE", "BELOW"] },
+        "targetPrice": { "type": "number" },
+        "enabled": { "type": "boolean" },
+        "triggered": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "assetSymbol", "assetLabel", "condition", "targetPrice", "enabled", "triggered", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "User shop settings, 2FA flags, Sheets workbook link, and gateway settings."
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/ShopAccount" },
+      "description": "Shop accounts and custom user-added accounts."
+    },
+    "/users/{userId}/inventory/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Gold and currency inventory items."
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customer profiles and separate file balances."
+    },
+    "/users/{userId}/investors/{investorId}": {
+      "schema": { "$ref": "#/entities/Investor" },
+      "description": "Gold investors and profit-sharing contracts."
+    },
+    "/users/{userId}/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/GoldTransaction" },
+      "description": "All retail transactions, sales, purchases, and account transfers."
+    },
+    "/users/{userId}/price_alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/PriceAlert" },
+      "description": "Real-time gold and USD price alerts."
+    }
+  }
+}
